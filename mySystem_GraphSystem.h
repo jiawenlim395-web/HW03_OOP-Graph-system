@@ -1,7 +1,7 @@
 //********************************************
-// Student Name			:
-// Student ID			:
-// Student Email Address:
+// Student Name			:Lim Jia Wen
+// Student ID			:114550112
+// Student Email Address:jiawen06.cs14@nycu.edu.tw
 //********************************************
 //
 //
