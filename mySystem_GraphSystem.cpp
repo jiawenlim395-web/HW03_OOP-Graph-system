@@ -1,4 +1,4 @@
-//********************************************
+﻿//********************************************
 // Student Name			:Lim Jia Wen 
 // Student ID			:114550112
 // Student Email Address:jiawen06.cs14@nycu.edu.tw
@@ -162,7 +162,9 @@ void GRAPH_SYSTEM::createDefaultGraph( )
 
 void GRAPH_SYSTEM::createRandomGraph_DoubleCircles(int n)
 {
-    reset( );
+    reset();
+    vector <int> inner_nodes;
+    vector <int> outer_nodes;
 
     //n = 36;
     float dx = 5.0;
@@ -171,9 +173,45 @@ void GRAPH_SYSTEM::createRandomGraph_DoubleCircles(int n)
     float d = 10; // layer distance
     float offset_x = 90.;
     float offset_z = 15.;
-    //
     // modify and add your code heres
-    //
+
+    float inner_radius = r;
+    float outer_radius = r + d;
+    float angle_step = 2.0 * 3.1415926 / n;
+
+    for (int i = 0; i < n; i++) {
+        float theta = i * angle_step;
+        float xi = offset_x + inner_radius * cos(theta);
+        float zi = offset_z + inner_radius * sin(theta);
+        float xo = offset_x + outer_radius * cos(theta);
+        float zo = offset_z + outer_radius * sin(theta);
+        float y = 0;
+
+        //add inner node
+        inner_nodes.push_back(addNode(xi, y, zi, inner_radius));
+        //add outer node
+        outer_nodes.push_back(addNode(xo, y, zo, outer_radius));
+
+    }
+
+    /*//connect inner circle
+    for (int i = 0; i < n; i++) {
+        addEdge(inner_nodes[i], inner_nodes[(i + 1) % n]);//last one back to the first one
+    }
+
+    //connect outer circle
+    for (int r = 0; r < n; r++) {
+        addEdge(outer_nodes[r], outer_nodes[(r + 1) % n]);
+    }
+    */
+    //connect inner to closed outer微偏移
+    for (int p = 0; p < n; p++) {
+        int offset = rand() % 3 - 1;
+        int k = p + offset;
+        k = (k + n) % n;
+        addEdge(inner_nodes[p], outer_nodes[k]);
+    }
+    return;
 }
 
 void GRAPH_SYSTEM::createNet_Circular( int n, int num_layers )
@@ -535,9 +573,9 @@ void GRAPH_SYSTEM::resetDepthOfAllNodes()
 
 * void k( Node *n, int depth ) {
 	if n is null, return
-	set n�s depth to depth
+	set n’s depth to depth
 	for each adjacent node m of n				; note m should not be n
-		if (m�s depth < depth + 1) k(m, depth+1)
+		if (m’s depth < depth + 1) k(m, depth+1)
 }
 
 void computeDepthOfAllNodesFromSelectedNode( ) {
