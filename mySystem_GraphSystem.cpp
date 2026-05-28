@@ -30,7 +30,7 @@ int Param::GRAPH_MAX_NUM_EDGES = 10000;
 
 GRAPH_SYSTEM::GRAPH_SYSTEM( )
 {
-    mFlgAutoNodeDeletion = true;
+    mFlgAutoNodeDeletion = false;
 
     mFlgShowNodeDepth = false;
 
@@ -50,7 +50,7 @@ GRAPH_SYSTEM::GRAPH_SYSTEM( )
 
     initMemoryPool();
     createDefaultGraph();
-    mNumPoints_DoubleCircles = 30;
+    mNumPoints_DoubleCircles = 24;
     // modify and add your code heres
     
     
@@ -146,16 +146,16 @@ void GRAPH_SYSTEM::createDefaultGraph( )
     reset( );
 
     float offset_x = 50.;
-    float offset_z = 60.;
+    float offset_z = 30.;
 
-    int n_0 = addNode(offset_x + 0.0, 0.0, offset_z + 0.0 , 2.0);
+    int n_0 = addNode(offset_x + 0.0, 0.0, offset_z + 0.0 , 1.0);
     cout << "n_0:"<< n_0 << endl;
 
     //
     // modify and add your code heres
     //
-    int n_1 = addNode(offset_x + 20.0, 0.0, offset_z + 0.0, 2.0);
-    int n_2 = addNode(offset_x + 0.0, 0.0, offset_z + 20.0, 2.0);
+    int n_1 = addNode(offset_x + 20.0, 0.0, offset_z + 0.0, 1.0);
+    int n_2 = addNode(offset_x + 0.0, 0.0, offset_z + 20.0, 1.0);
 
     addEdge( n_0, n_1 );
     addEdge(n_1, n_2);
@@ -170,11 +170,11 @@ void GRAPH_SYSTEM::createRandomGraph_DoubleCircles(int n)
     vector <int> outer_nodes;
 
     //n = 36;
-    float dx = 20.0;
-    float dz = 20.0;
-    float r = 40; // radius
+    float dx = 30.0;
+    float dz = 30.0;
+    float r = 15; // radius
     float d = 20; // layer distance
-    float offset_x = 50.;
+    float offset_x = 40.;
     float offset_z = 60.;
     // modify and add your code heres
 
@@ -191,9 +191,9 @@ void GRAPH_SYSTEM::createRandomGraph_DoubleCircles(int n)
         float y = 0;
 
         //add inner node
-        inner_nodes.push_back(addNode(xi, y, zi, 2.0));
+        inner_nodes.push_back(addNode(xi, y, zi, 1.0));
         //add outer node
-        outer_nodes.push_back(addNode(xo, y, zo, 2.0));
+        outer_nodes.push_back(addNode(xo, y, zo, 1.0));
 
     }
 
@@ -221,12 +221,12 @@ void GRAPH_SYSTEM::createNet_Circular( int n, int num_layers )
 {
     reset( );
 
-    float dx = 20.0;
-    float dz = 20.0;
-    float r = 15; // radius
-    float d = 15; // layer distance 
+    float dx = 10.0;
+    float dz = 10.0;
+    float r = 5; // radius
+    float d = 5; // layer distance 
     float offset_x = 40.;
-    float offset_z = 80.;
+    float offset_z = 60.;
 
     // modify and add your code heres
 
@@ -242,7 +242,7 @@ void GRAPH_SYSTEM::createNet_Circular( int n, int num_layers )
             float x = offset_x + radius * cos(theta);
             float z = offset_z + radius * sin(theta);
 
-            layernode[p][i] = addNode(x, 0, z, 2.0);
+            layernode[p][i] = addNode(x, 0, z, 1.0);
 
         }
     }
@@ -268,12 +268,12 @@ void GRAPH_SYSTEM::createNet_Square( int n, int num_layers )
 {
     reset( );
 
-    float dx = 10.0;
-    float dz = 20.0;
-    float r = 6; // radius
-    float d = 6; // layer distance 
-    float offset_x = 9.;
-    float offset_z = 9.;
+    float dx = 5.0;
+    float dz = 5.0;
+    float r = 5; // radius
+    float d = 5; // layer distance 
+    float offset_x = 5.;
+    float offset_z = 6.;
     //
     // modify and add your code heres
     //
@@ -297,7 +297,7 @@ void GRAPH_SYSTEM::createNet_Square( int n, int num_layers )
             if (insidehole) {
                 continue;
             }
-            node[row][column] = addNode(nx, 0, nz, 2.0);
+            node[row][column] = addNode(nx, 0, nz, 1.0);
         }
     }
     for (int row = 0; row < side_length; row++) {
@@ -332,15 +332,16 @@ void GRAPH_SYSTEM::createNet_RadicalCircular( int n ) {
 
     reset( );
 
-    float offset_x = 50.0;
+    float offset_x = 40.0;
     float offset_z = 60.0;
 
-    float r = 50; // radius
+    float r = 15; // radius
 
     //
     // modify and add your code heres
     //
     float angle_step = 2 * 3.1415926 / n;
+    vector<int> inner_node;
     vector<int> outer_node;
 
     for (int i = 0; i < n; i++) {
@@ -349,11 +350,12 @@ void GRAPH_SYSTEM::createNet_RadicalCircular( int n ) {
         float zo = offset_z + r * sin(theta);
 
         //circle
-        outer_node.push_back(addNode(xo, 0, zo, 2.0));
+        outer_node.push_back(addNode(xo, 0, zo, 1.0));
+        inner_node.push_back(addNode(offset_x, 0, offset_z, 1.0));
     }
 
     for (int i = 0; i < n; i++) {
-        addEdge(outer_node[i], addNode(offset_x, 0, offset_z, 2.0));
+        addEdge(outer_node[i], inner_node[i]);
     }
     return;
 
@@ -777,20 +779,19 @@ float GRAPH_SYSTEM::getNodeDepthFromSelectedNode(int nodeIndex) const
 
 void GRAPH_SYSTEM::resetPathInformationOfAllNodes()
 {
-    //
+    
     // modify and add your code heres
-    // 
 
     int numNodes = getNumOfNodes();
     for (int i = 0; i < numNodes; ++i) {
         int nodeID = mActiveNodeArr[i];
         GRAPH_NODE* n = &mNodeArr_Pool[nodeID];
-        //
+  
         // modify and add your code heres
-        //
+
         // set path cost of node
         // set path_parent of node
-        n->path_cost = 0.0;
+        n->path_cost = DBL_MAX;
         n->path_parent = nullptr;
     }
 }
@@ -818,22 +819,21 @@ void GRAPH_SYSTEM::computeShortestPath(GRAPH_NODE *node)
         GRAPH_NODE* cur = &mNodeArr_Pool[next];
 
         // compute distance d: node->p.distance(next->p);
-        int d = node->p.distance(cur->p);
+        double d = node->p.distance(cur->p);
 
         // if new path cost is not better, check for the other edges
-        int new_cost = node->path_cost + d;
+        //length from node to cur's edge
+        double new_cost = node->path_cost + d;
         if (new_cost < cur->path_cost) {
-            cur->path_cost = d;
+            cur->path_cost = new_cost;
             cur->path_parent = node;
             computeShortestPath(cur);
         }
+       
         // if new path cost is better, update the node's path cost and path_parent
         
         // Also, invoke computeShortestPath for the current node.
-   
-        //int edgeID = node->edgeID[i];
-        //GRAPH_EDGE* e = &mEdgeArr_Pool[edgeID];
-
+  
         //GRAPH_NODE* n0 = &mNodeArr_Pool[e->nodeID[0]];
         //GRAPH_NODE* n1 = &mNodeArr_Pool[e->nodeID[1]];
         //
@@ -853,6 +853,7 @@ void GRAPH_SYSTEM::computeShortestPath()
     if (mStartNode == nullptr || mDestinationNode == nullptr) {
         return;
     }
+    mStartNode->path_cost = 0.0;
     computeShortestPath(mStartNode);
 
     //invokte computeShortestPath with mStartNode
@@ -874,7 +875,7 @@ void GRAPH_SYSTEM::handleKeyPressedEvent( unsigned char key )
         break;
     case '2':
         mFlgAutoNodeDeletion = false;
-        createNet_Circular(12, 6);
+        createNet_Circular(25, 6);
         mSelectedNode = 0;
 
         break;
