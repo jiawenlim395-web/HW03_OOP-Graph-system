@@ -268,12 +268,12 @@ void GRAPH_SYSTEM::createNet_Square( int n, int num_layers )
 {
     reset( );
 
-    float dx = 5.0;
-    float dz = 5.0;
+    float dx = 6.0;
+    float dz = 6.0;
     float r = 5; // radius
     float d = 5; // layer distance 
-    float offset_x = 5.;
-    float offset_z = 6.;
+    float offset_x = 4.;
+    float offset_z = 9.;
     //
     // modify and add your code heres
     //
@@ -335,13 +335,13 @@ void GRAPH_SYSTEM::createNet_RadicalCircular( int n ) {
     float offset_x = 40.0;
     float offset_z = 60.0;
 
-    float r = 15; // radius
+    float r = 25; // radius
 
     //
     // modify and add your code heres
     //
     float angle_step = 2 * 3.1415926 / n;
-    vector<int> inner_node;
+    int inner_node;
     vector<int> outer_node;
 
     for (int i = 0; i < n; i++) {
@@ -351,11 +351,11 @@ void GRAPH_SYSTEM::createNet_RadicalCircular( int n ) {
 
         //circle
         outer_node.push_back(addNode(xo, 0, zo, 1.0));
-        inner_node.push_back(addNode(offset_x, 0, offset_z, 1.0));
+      
     }
-
+    inner_node = addNode(offset_x, 0, offset_z, 1.0);
     for (int i = 0; i < n; i++) {
-        addEdge(outer_node[i], inner_node[i]);
+        addEdge(outer_node[i], inner_node);
     }
     return;
 
@@ -531,19 +531,24 @@ void GRAPH_SYSTEM::performOperation(GRAPH_NODE* node) {
 
 void GRAPH_SYSTEM::deleteEdge( int edgeID )
 {
-    if (mActiveEdgeArr <= 0) {
+    if (mCurNumOfActiveEdges <= 0) {
         return;
     }
 
     GRAPH_EDGE *e = &mEdgeArr_Pool[ edgeID ];
     int dynamicID = e->dynamicID;
 
-    mCurNumOfFreeEdges++;
-    mFreeEdgeArr[mCurNumOfFreeEdges] = edgeID;
-
-    int lastActiveid = mActiveEdgeArr[mCurNumOfActiveEdges-1];
+    int lastActiveid = mActiveEdgeArr[mCurNumOfActiveEdges - 1];
+    mActiveEdgeArr[dynamicID] = lastActiveid;
     mEdgeArr_Pool[lastActiveid].dynamicID = dynamicID;
+
     mCurNumOfActiveEdges--;
+
+    mFreeEdgeArr[mCurNumOfFreeEdges] = edgeID;
+    mCurNumOfFreeEdges++;
+
+
+
 
     // modify and add your code heres
 
@@ -557,19 +562,13 @@ void GRAPH_SYSTEM::removeEdgeFromNode( const GRAPH_EDGE *e, int nodeID )
     int sizeofEdgeId = n->edgeID.size();
     int removeedgeID = e->id;
 
-    for (int i = 0; i < sizeofEdgeId; i++) {
-        if (n->edgeID[i] == removeedgeID) {
-            n->edgeID.erase(n->edgeID .begin() + i);
+    for (auto it = n->edgeID.begin (); it != n->edgeID.end(); it++) {
+        if (*it == e->id) {
+            n->edgeID.erase(it);
+            break;// found and removed, exit out cleanly
         }
     }
-    int other_nodeid = e->nodeID[0];
-    if (other_nodeid == nodeID) {
-        other_nodeid = e->nodeID[1];
-    }
-
-    removeEdgeFromNode(e, other_nodeid);
-
-
+   
 }
 void GRAPH_SYSTEM::deleteEdgesOfNode( int nodeID )
 { 
@@ -587,7 +586,7 @@ void GRAPH_SYSTEM::deleteEdgesOfNode( int nodeID )
         else {
             e->nodeID[0] = 0;
         }
-   
+        //deleteEdge(n->edgeID.back());
         n->edgeID.pop_back();
     }
 
@@ -602,10 +601,12 @@ void GRAPH_SYSTEM::deleteNode( int nodeID ) {
     int new_dynamicId = n->dynamicID;
     int num = mActiveNodeArr[mCurNumOfActiveNodes - 1];
     mNodeArr_Pool[num].dynamicID = new_dynamicId;
+    mActiveNodeArr[new_dynamicId] = num;
     mCurNumOfActiveNodes--;
 
-    mCurNumOfFreeNodes++;
     mFreeNodeArr[mCurNumOfFreeNodes] = nodeID;
+
+    mCurNumOfFreeNodes++;
 
     return;
 
@@ -619,6 +620,7 @@ void GRAPH_SYSTEM::deleteSelectedNode(  ) {
     int id = mSelectedNode->id;
     deleteEdgesOfNode(id);
     deleteNode(id);
+    
 
     mSelectedNode = 0;
 
@@ -986,7 +988,6 @@ void GRAPH_SYSTEM::stopAutoNodeDeletion()
 void GRAPH_SYSTEM::update( )
 {
     if (!mFlgAutoNodeDeletion) {
-     
         return;
     }
     if (mCurNumOfActiveNodes<=0) {
@@ -997,27 +998,35 @@ void GRAPH_SYSTEM::update( )
 
     //
     // modify and add your code
-    // 
+    // s
+    if (mSelectedNode == nullptr) {
+        int id = mActiveNodeArr[0];
+        mSelectedNode = &mNodeArr_Pool[id];
+    }
     GRAPH_NODE* m = mSelectedNode;
+    
     //only size changed
     //[2,5,8]delete the first one then 5 will move forward
 
+    vector<int> recordedgeid;
     while(m->edgeID.size()>0) {
-
         int edgeid = m->edgeID[0];
         GRAPH_EDGE* e = &mEdgeArr_Pool[edgeid];
         int n0 = e->nodeID[0];
         int n1 = e->nodeID[1];
-        deleteEdge(edgeid);
         removeEdgeFromNode(e, n0);
         removeEdgeFromNode(e, n1);
+        recordedgeid.push_back(edgeid);
     }
     // delete the selected node?
     // delete all the edges incident to the selected node?
     //
     //delete all node and edge id
-    deleteNode(m->id);
+    for (int i = 0; i < recordedgeid.size(); i++) {
+        deleteEdge(recordedgeid[i]);
+    }
 
+    deleteNode(m->id);
     mSelectedNode = 0;
     mPassiveSelectedNode = 0;
 }
