@@ -140,23 +140,24 @@ GRAPH_EDGE *GRAPH_SYSTEM::getFreeEdge( )
 
 void GRAPH_SYSTEM::createDefaultGraph( )
 {
-    cout << "here"<< endl;
+    cout << "here"<< endl;/////////
     reset( );
 
     float offset_x = 90.;
     float offset_z = 15.;
 
     int n_0 = addNode(offset_x + 0.0, 0.0, offset_z + 0.0 );
-    cout << "n_0:"<< n_0 << endl;
+    cout << "n_0:"<< n_0 << endl;//////////
 
     //
     // modify and add your code heres
     //
-    int n_1 = addNode(offset_x + 1.0, 0.0, offset_z + 0.0);
-    int n_2 = addNode(offset_x + 0.0, 0.0, offset_z + 1.0);
+    int n_1 = addNode(offset_x + 10.0, 0.0, offset_z + 0.0);
+    int n_2 = addNode(offset_x + 0.0, 0.0, offset_z + 10.0);
 
     addEdge( n_0, n_1 );
-    addEdge( n_1, n_2 );
+    addEdge(n_1, n_2);
+    
     return;
 }
 
@@ -188,9 +189,9 @@ void GRAPH_SYSTEM::createRandomGraph_DoubleCircles(int n)
         float y = 0;
 
         //add inner node
-        inner_nodes.push_back(addNode(xi, y, zi, inner_radius));
+        inner_nodes.push_back(addNode(xi, y, zi, 1.0));
         //add outer node
-        outer_nodes.push_back(addNode(xo, y, zo, outer_radius));
+        outer_nodes.push_back(addNode(xo, y, zo, 1.0));
 
     }
 
@@ -225,13 +226,41 @@ void GRAPH_SYSTEM::createNet_Circular( int n, int num_layers )
     float offset_x = 90.;
     float offset_z = 30.;
 
-    //
     // modify and add your code heres
-    //
 
+    float angle_step = 2 * 3.1415926 / n;
+    vector<int> outer_node;
+    vector<int> inner_node;
 
+    for (int p = 0; p < num_layers + 1; p++) {
+        for (int i = 0; i < n; i++) {
 
+            float theta = i * angle_step;
+            float inner_radius = r + p * d;
+            float outer_radius = r + (p + 1) * d;
+
+            float xo = offset_x + outer_radius * cos(theta);
+            float zo = offset_z + outer_radius * sin(theta);
+            float xi = offset_x + inner_radius * cos(theta);
+            float zi = offset_z + inner_radius * sin(theta);
+
+            outer_node.push_back(addNode(xo, 0, zo, 1.0));
+            inner_node.push_back(addNode(xi, 0, zi, 1.0));
+        }
+    }
+    
+    //connect inner and outer layer
+    for (int i = 0; i < n*num_layers ; i++) {
+        addEdge(outer_node[i], inner_node[i]);
+    }
+    //connect to be a circled
+    for (int i = 0; i < n*num_layers -1 ; i++) {
+        addEdge(inner_node[i], inner_node[(i + 1) % n]);
+    }
+
+    return;
 }
+
 void GRAPH_SYSTEM::createNet_Square( int n, int num_layers )
 {
     reset( );
@@ -246,7 +275,56 @@ void GRAPH_SYSTEM::createNet_Square( int n, int num_layers )
     // modify and add your code heres
     //
 
+    int side_length = 2 * num_layers + n;
+    //initialize -1
+    vector<vector<int>>node(side_length, vector<int>(side_length, -1));
+    
+    for (int row = 0; row < side_length; row++) {
+
+        float nz = offset_z + row * dz;
+
+        for (int column = 0; column < side_length; column++) {
+
+            float nx = offset_x + column * dx;
+            bool insidehole = row >= num_layers &&
+                row <= num_layers + n -2 &&
+                column <= n + num_layers - 2 &&
+                column >= num_layers;
+
+            if (insidehole) {
+                continue;
+            }
+            node[row][column] = addNode(nx, 0, nz, 1.0);
+        }
+    }
+    for (int row = 0; row < side_length; row++) {
+        for (int col = 0; col < side_length; col++) {
+
+            int current = node[row][col];
+            
+            if (current == -1) {
+                continue;
+            }
+            else {
+                if (col + 1 < side_length) {
+                    int right = node[row][col + 1];
+                    if (right != -1) {
+                        addEdge(current, right);
+                    }
+                }
+
+                if(row + 1 < side_length){
+                    int down = node[row + 1][col];
+                    if (down != -1) {
+                        addEdge(current, down);
+                    }
+                } 
+            }
+        }
+    }
+
 }
+
 void GRAPH_SYSTEM::createNet_RadicalCircular( int n ) {
 
     reset( );
@@ -259,7 +337,22 @@ void GRAPH_SYSTEM::createNet_RadicalCircular( int n ) {
     //
     // modify and add your code heres
     //
+    float angle_step = 2 * 3.1415926 / n;
+    vector<int> outer_node;
 
+    for (int i = 0; i < n; i++) {
+        float theta = i * angle_step;
+        float xo = offset_x + r * cos(theta);
+        float zo = offset_z + r * sin(theta);
+
+        //circle
+        outer_node.push_back(addNode(xo, 0, zo, 1.0));
+    }
+
+    for (int i = 0; i < n; i++) {
+        addEdge(outer_node[i], addNode(offset_x, 0, offset_z, 1.0));
+    }
+    return;
 
 }
 
@@ -568,11 +661,14 @@ void GRAPH_SYSTEM::resetDepthOfAllNodes()
 
     int numNodes = getNumOfNodes();
     for (int i = 0; i < numNodes; ++i) {
-        //int nodeID = mActiveNodeArr[i];
-        //GRAPH_NODE* n = &mNodeArr_Pool[nodeID];
-        //
+        int nodeID = mActiveNodeArr[i];
+        GRAPH_NODE* n = &mNodeArr_Pool[nodeID];
+        n->depth = 0;
+        n->path_parent = nullptr;
+        n->visited = false;
+        
         // modify and add your code heres
-        // 
+         
         // set node's depth
         // and others if necessary
         //
@@ -603,24 +699,30 @@ void GRAPH_SYSTEM::computeDepthOfAllNodesFromSelectedNode(GRAPH_NODE* node, int 
     if (node == 0) return;
     node->depth = depth;
     node->visited = true;
-    //
-    // modify and add your code heres
-    //
-    // for all edges incident to the node: node
-        // get edge ID
-        // get e = &mEdgeArr_Pool[edgeID];
-        // n0 = &mNodeArr_Pool[e->nodeID[0]];
-        // n1 = &mNodeArr_Pool[e->nodeID[1]];
+
+        // for all edges incident to the node: node
+        
         // determine the next node, which is set as the current node
         // update the current node's depth
         // recursively update all the nodes connected to the current node
         //     
-    //for (int i = 0; i < node->edgeID.size(); ++i) {
-        //
-        // modify and add your code heres
-        // 
-        
-    //}
+    for (int i = 0; i < node->edgeID.size(); ++i) {
+        int edgeid = node->edgeID[i];
+        GRAPH_EDGE* e = &mEdgeArr_Pool[edgeid];
+        int nextid;
+        if (node->id == e->nodeID[0]) {
+            nextid = e->nodeID[1];
+        }
+        else {
+            nextid = e->nodeID[0];
+        }
+
+        GRAPH_NODE* next = &mNodeArr_Pool[nextid];
+        if (!next->visited) {
+            computeDepthOfAllNodesFromSelectedNode(next,depth + 1);
+        }
+    }
+            
 }
 
 void GRAPH_SYSTEM::computeDepthOfAllNodesFromSelectedNode()
