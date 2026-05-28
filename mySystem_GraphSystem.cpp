@@ -194,7 +194,7 @@ void GRAPH_SYSTEM::createRandomGraph_DoubleCircles(int n)
 
     }
 
-    /*//connect inner circle
+    //connect inner circle
     for (int i = 0; i < n; i++) {
         addEdge(inner_nodes[i], inner_nodes[(i + 1) % n]);//last one back to the first one
     }
@@ -203,10 +203,10 @@ void GRAPH_SYSTEM::createRandomGraph_DoubleCircles(int n)
     for (int r = 0; r < n; r++) {
         addEdge(outer_nodes[r], outer_nodes[(r + 1) % n]);
     }
-    */
+    
     //connect inner to closed outer微偏移
     for (int p = 0; p < n; p++) {
-        int offset = rand() % 3 - 1;
+        int offset = rand() % 5 - 2;
         int k = p + offset;
         k = (k + n) % n;
         addEdge(inner_nodes[p], outer_nodes[k]);
@@ -274,11 +274,17 @@ int GRAPH_SYSTEM::addNode( float x, float y, float z, float r )
     //
     // modify and add your code heres
     //
+
     if (g == nullptr) {
         return -1;
     }
     g->p = vector3(x, y, z);
     g->r = r;
+    g->edgeID.clear();
+    g->depth = 0;
+    g->visited = 0;
+    g->path_cost = 0;
+    g->path_parent = nullptr;
 
     return g->id;
 }
@@ -299,6 +305,13 @@ int GRAPH_SYSTEM::addEdge( int nodeID_0, int nodeID_1 )
     }
     e->nodeID[0] = nodeID_0;
     e->nodeID[1] = nodeID_1;
+
+    GRAPH_NODE* n0;
+    GRAPH_NODE* n1;
+    n0 = &mNodeArr_Pool[nodeID_0];
+    n1 = &mNodeArr_Pool[nodeID_1];
+    n0->edgeID.push_back(e->id);
+    n1->edgeID.push_back(e->id);
     
     return e->id;
 
